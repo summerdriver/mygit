@@ -1,0 +1,33 @@
+name: Docker Build and Test
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          dockerfile: Dockerfile
+          push: false
+          tags: mynginx:latest
+
+      - name: Start nginx container
+        run: |
+          docker run --detach --name=nginx -p 8000:80 mynginx:latest
+          
+      - name: Test nginx container
+        run: |
+          curl --retry 10 --retry-delay 1 -v http://localhost:8000
+
+      - name: Stop nginx container
+        run: |
+          docker stop nginx && docker rm nginx
